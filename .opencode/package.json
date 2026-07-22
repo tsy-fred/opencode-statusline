@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "@opencode-ai/plugin": "1.18.4",
+    "solid-js": "^1.9.0"
+  },
+  "devDependencies": {
+    "@opencode-ai/sdk": "^1.18.4",
+    "@opentui/core": "^0.4.5",
+    "@opentui/solid": "^0.4.5",
+    "@types/node": "^26.1.1",
+    "typescript": "^5.9.3"
+  }
+}

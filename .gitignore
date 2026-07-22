@@ -1,0 +1,5 @@
+node_modules/
+.opencode/node_modules/
+.opencode/memory/
+.DS_Store
+*.log
