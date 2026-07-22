@@ -1,8 +1,11 @@
 /** @jsxImportSource @opentui/solid */
-import { createRoot, createSignal } from "solid-js"
+import { createRoot, createSignal, type Accessor } from "solid-js"
 import type { RGBA } from "@opentui/core"
-import type { TuiPlugin, TuiPluginModule, TuiPluginApi, TuiThemeCurrent, TuiDialogSelectOption } from "@opencode-ai/plugin/tui"
+import type { TuiPlugin, TuiPluginModule, TuiPluginApi, TuiPluginMeta, TuiThemeCurrent, TuiDialogSelectOption } from "@opencode-ai/plugin/tui"
 import type { AssistantMessage, TextPart } from "@opencode-ai/sdk/v2"
+import { homedir } from "os"
+import { join } from "path"
+import { copyFile, writeFile, readFile, mkdir } from "fs/promises"
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -406,10 +409,6 @@ function nextProfileName(profiles: Profiles): string {
 
 // ─── Export / Import ───────────────────────────────────────────────────
 
-import { homedir } from "os"
-import { join } from "path"
-import { writeFile, readFile } from "fs/promises"
-
 function exportPath(): string {
   return join(homedir(), ".config", "opencode", "statusline-config.json")
 }
@@ -424,6 +423,49 @@ function flattenWidgets(cfg: StatuslineConfig): WidgetItem[] {
   const items: WidgetItem[] = []
   cfg.lines.forEach((line, li) => line.forEach((def, ci) => items.push({ line: li, col: ci, def })))
   return items
+}
+
+// ─── Global Install ────────────────────────────────────────────────────
+
+async function tryInstallGlobal(
+  api: TuiPluginApi,
+  config: Accessor<StatuslineConfig>,
+  setConfig: (fn: (prev: StatuslineConfig) => StatuslineConfig) => void,
+  meta: TuiPluginMeta,
+) {
+  try {
+    const projectDir = api.state.path.directory
+    if (!projectDir) {
+      api.ui.toast({ variant: "error", title: "无法获取项目目录", message: "" })
+      return
+    }
+    if (meta.source !== "file") {
+      api.ui.toast({ variant: "error", title: "仅支持本地文件安装", message: "请从 GitHub 仓库手动安装到 ~/.config/opencode/plugins/" })
+      return
+    }
+    const spec = meta.spec
+    const srcPath = join(projectDir, spec)
+    const configDir = join(homedir(), ".config", "opencode")
+    const pluginDir = join(configDir, "plugins")
+    const pluginDest = join(pluginDir, "opencode-statusline.tsx")
+
+    await mkdir(pluginDir, { recursive: true })
+    await copyFile(srcPath, pluginDest)
+
+    const tuiPath = join(configDir, "tui.json")
+    const raw = await readFile(tuiPath, "utf-8")
+    const json = JSON.parse(raw)
+    if (!json.plugin) json.plugin = []
+    const entry = "plugins/opencode-statusline.tsx"
+    if (!json.plugin.some((p: unknown) => typeof p === "string" && p === entry)) {
+      json.plugin.push(entry)
+      await writeFile(tuiPath, JSON.stringify(json, null, 2) + "\n")
+    }
+
+    api.ui.toast({ variant: "success", title: "已安装到全局", message: "重启 opencode 后所有会话生效" })
+  } catch (e) {
+    api.ui.toast({ variant: "error", title: "安装失败", message: `${e}` })
+  }
 }
 
 // ─── Dialog: Main Menu ───────────────────────────────────────────────
@@ -1087,7 +1129,7 @@ function commitConfig(
 
 // ─── Plugin entry ─────────────────────────────────────────────────────
 
-const tui: TuiPlugin = async (api, options) => {
+const tui: TuiPlugin = async (api, options, meta) => {
   createRoot((dispose) => {
     const [data, setData] = createSignal<StatusData>(INITIAL_DATA)
     // Priority: tui.json plugin options > kv > built-in default
@@ -1220,6 +1262,16 @@ const tui: TuiPlugin = async (api, options) => {
           slashName: "statusline",
           run() {
             showMainMenu(api, config, setConfig)
+          },
+        },
+        {
+          name: "opencode-statusline.global-install",
+          title: "全局安装状态栏（跨所有 opencode 项目生效）",
+          category: "Plugin",
+          namespace: "palette",
+          slashName: "statusline-global",
+          async run() {
+            await tryInstallGlobal(api, config, setConfig, meta)
           },
         },
       ],
