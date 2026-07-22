@@ -4,6 +4,12 @@ A real-time session status bar for the opencode TUI sidebar footer.
 
 Inspired by [ccstatusline](https://github.com/sirmalloc/ccstatusline) for Claude Code.
 
+## Screenshots
+
+| Configuration panel | Live sidebar |
+|:---:|:---:|
+| ![Config panel](assets/statusline-config.png) | ![Live demo](assets/statusline-demo.png) |
+
 ## Features
 
 - **Real-time stats** — tokens, cost, speed, context usage, reasoning tokens, cache hit rate
