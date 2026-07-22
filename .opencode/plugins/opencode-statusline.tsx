@@ -447,8 +447,10 @@ async function tryInstallGlobal(api: TuiPluginApi) {
     const raw = await readFile(tuiPath, "utf-8")
     const json = JSON.parse(raw)
     if (!json.plugin) json.plugin = []
-    const entry = "plugins/opencode-statusline.tsx"
+    const entry = pluginDest
+    const oldEntry = "plugins/opencode-statusline.tsx"
     if (!json.plugin.some((p: unknown) => typeof p === "string" && p === entry)) {
+      json.plugin = json.plugin.filter((p: unknown) => typeof p !== "string" || p !== oldEntry)
       json.plugin.push(entry)
       await writeFile(tuiPath, JSON.stringify(json, null, 2) + "\n")
     }
