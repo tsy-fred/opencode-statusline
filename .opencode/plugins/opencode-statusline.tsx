@@ -427,24 +427,15 @@ function flattenWidgets(cfg: StatuslineConfig): WidgetItem[] {
 
 // ─── Global Install ────────────────────────────────────────────────────
 
-async function tryInstallGlobal(
-  api: TuiPluginApi,
-  config: Accessor<StatuslineConfig>,
-  setConfig: (fn: (prev: StatuslineConfig) => StatuslineConfig) => void,
-  meta: TuiPluginMeta,
-) {
+async function tryInstallGlobal(api: TuiPluginApi) {
   try {
     const projectDir = api.state.path.directory
     if (!projectDir) {
-      api.ui.toast({ variant: "error", title: "无法获取项目目录", message: "" })
+      api.ui.toast({ variant: "error", title: "安装失败", message: "无法获取项目目录" })
       return
     }
-    if (meta.source !== "file") {
-      api.ui.toast({ variant: "error", title: "仅支持本地文件安装", message: "请从 GitHub 仓库手动安装到 ~/.config/opencode/plugins/" })
-      return
-    }
-    const spec = meta.spec
-    const srcPath = join(projectDir, spec)
+
+    const srcPath = join(projectDir, ".opencode", "plugins", "opencode-statusline.tsx")
     const configDir = join(homedir(), ".config", "opencode")
     const pluginDir = join(configDir, "plugins")
     const pluginDest = join(pluginDir, "opencode-statusline.tsx")
@@ -464,7 +455,8 @@ async function tryInstallGlobal(
 
     api.ui.toast({ variant: "success", title: "已安装到全局", message: "重启 opencode 后所有会话生效" })
   } catch (e) {
-    api.ui.toast({ variant: "error", title: "安装失败", message: `${e}` })
+    const msg = e instanceof Error ? e.message + (e.stack ? " | " + e.stack.split("\n")[1]?.trim() : "") : `${e}`
+    api.ui.toast({ variant: "error", title: "安装失败", message: msg })
   }
 }
 
@@ -1271,7 +1263,7 @@ const tui: TuiPlugin = async (api, options, meta) => {
           namespace: "palette",
           slashName: "statusline-global",
           async run() {
-            await tryInstallGlobal(api, config, setConfig, meta)
+            await tryInstallGlobal(api)
           },
         },
       ],
