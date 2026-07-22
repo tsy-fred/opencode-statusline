@@ -43,19 +43,26 @@ Inspired by [ccstatusline](https://github.com/sirmalloc/ccstatusline) for Claude
 
 ## Installation
 
-1. **Clone the repo** into your project's `.opencode` directory:
+### Global (recommended)
+
+Run `/statusline-global` inside an opencode session that already has the plugin loaded.
+This copies the plugin to `~/.config/opencode/plugins/` and registers it in the global `tui.json`,
+making it available in all projects.
+
+### Per-project
+
+1. **Copy the plugin file** to your project's `.opencode/plugins/`:
 
 ```sh
 cd /path/to/your/project
-mkdir -p .opencode/plugins
-git clone https://github.com/yourusername/opencode-statusline.git .opencode/plugins/opencode-statusline
+cp path/to/opencode-statusline/.opencode/plugins/opencode-statusline.tsx .opencode/plugins/
 ```
 
-2. **Install dependencies:**
+2. **Add dependencies** to your project's `.opencode/package.json`:
 
 ```sh
-cd .opencode/plugins/opencode-statusline/.opencode
-npm install
+cd .opencode
+npm install solid-js @opentui/core @opentui/solid
 ```
 
 3. **Register the plugin** in your `tui.json`:
@@ -63,13 +70,13 @@ npm install
 ```json
 {
   "$schema": "https://opencode.ai/tui.json",
-  "plugin": ["./.opencode/plugins/opencode-statusline/opencode-statusline.tsx"]
+  "plugin": ["./.opencode/plugins/opencode-statusline.tsx"]
 }
 ```
 
 4. **Restart opencode.**
 
-Open the statusline config panel at any time with the `/statusline` command.
+Open the config panel at any time with the `/statusline` command.
 
 ## Configuration
 
